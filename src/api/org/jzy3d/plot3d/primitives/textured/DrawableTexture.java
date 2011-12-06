@@ -174,7 +174,7 @@ public class DrawableTexture extends AbstractDrawable implements ITranslucent{
 		TextureCoords coords = resource.getCoords();
 		
 		// Bind texture & set color filter
-		texture.bind();
+		texture.bind(gl);
 		callWithAlphaFactor(gl, filter, alpha);
 		
 		// Draw

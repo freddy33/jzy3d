@@ -4,7 +4,7 @@
  *                                       defaults=[0.9 [-150..150 [50]]]
  * @author John/af4ex
  */
-package org.jzy3d.demos.animation
+package org.jzy3d.demos.groovy.animation
 
 import java.awt.Graphics
 import java.awt.Graphics2D
@@ -30,6 +30,8 @@ import org.jzy3d.plot3d.primitives.Shape
 //import org.jzy3d.plot3d.primitives.faces.ColorbarFace
 import org.jzy3d.plot3d.rendering.view.Renderer2d
 import org.jzy3d.ui.ChartLauncher
+import static java.lang.Math.cos
+import static java.lang.Math.sin
 
 // G.var provides Global container for script vars
 class G { static var=[:] }

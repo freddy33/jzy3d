@@ -3,6 +3,9 @@
  *   usage: groovy SimpleSurfaceDemo.groovy 
  * @author John/af4ex (original coded in Scala by Aurimas Anskaitis)
  */
+
+package org.jzy3d.demos.groovy.animation
+
 import org.jzy3d.chart.*
 import org.jzy3d.colors.*
 import org.jzy3d.colors.colormaps.*
@@ -12,7 +15,8 @@ import org.jzy3d.plot3d.primitives.Shape
 import org.jzy3d.maths.Range
 import java.awt.Rectangle
 import org.jzy3d.ui.ChartLauncher
-//======================================================== 
+
+//========================================================
 class ParmMapper extends Mapper
 {
    double f(double x, double y)

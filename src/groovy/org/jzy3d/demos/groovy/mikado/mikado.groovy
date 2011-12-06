@@ -2,7 +2,7 @@
  *   usage: groovy mikado.groovy [numlines]
  *   @author John/af4ex
  */
-package org.jzy3d.demos.mikado
+package org.jzy3d.demos.groovy.mikado
 
 import java.awt.Rectangle
 import java.util.List

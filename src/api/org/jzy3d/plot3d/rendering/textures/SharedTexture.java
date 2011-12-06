@@ -22,7 +22,7 @@ public class SharedTexture {
 
     public Texture getTexture(GL2 gl) {
         if (texture == null)
-            mount();
+            mount(gl);
         else { // execute onmount even if we did not mount
                // if( action != null )
                // action.execute();
@@ -30,10 +30,11 @@ public class SharedTexture {
         return texture;
     }
 
-    /** A GL2 context MUST be current. */
-    public void mount() {
+    /** A GL2 context MUST be current.
+     * @param gl*/
+    public void mount(GL2 gl) {
         try {
-            load(file);
+            load(file, gl);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -45,10 +46,10 @@ public class SharedTexture {
         // halfWidth + " halfHeight=" + halfHeight);
     }
 
-    protected void load(String fileName) throws GLException, IOException {
+    protected void load(String fileName, GL2 gl) throws GLException, IOException {
         texture = TextureIO.newTexture(new File(fileName), false);
-        texture.setTexParameteri(GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
-        texture.setTexParameteri(GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
+        texture.setTexParameteri(gl, GL2.GL_TEXTURE_MAG_FILTER, GL2.GL_NEAREST);
+        texture.setTexParameteri(gl, GL2.GL_TEXTURE_MIN_FILTER, GL2.GL_NEAREST);
     }
 
     public String getFile() {

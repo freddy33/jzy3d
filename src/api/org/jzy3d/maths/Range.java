@@ -1,6 +1,6 @@
 package org.jzy3d.maths;
 
-/** For some naming relevance, a simple extention of Scale.*/
+/** For some naming relevance, a simple extension of Scale.*/
 public class Range extends Scale {
 	public Range(double min, double max){
 		super(min, max);
@@ -18,6 +18,6 @@ public class Range extends Scale {
 		double offset = (max-min) * ratio;
 		if(offset==0)
     		offset=1;
-		return new Range(min, max);
+		return new Range(min-offset, max+offset);
 	}
 }

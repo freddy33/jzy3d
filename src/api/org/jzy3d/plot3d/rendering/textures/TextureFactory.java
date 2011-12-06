@@ -19,7 +19,7 @@ public class TextureFactory {
 	
 	public static void init(GL2 gl){
 		for( SharedTexture texture: map.values() )
-			texture.mount();
+			texture.mount(gl);
 	}
 	
 	public static SharedTexture get(String name){

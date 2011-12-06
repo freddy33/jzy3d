@@ -2,7 +2,7 @@
  *  Groovy version of CustomRendererDemo.java
  *  @author John/af4ex 
  */
-package org.jzy3d.demos.axelayout
+package org.jzy3d.demos.groovy.axelayout
 
 import java.awt.Rectangle
 import org.jzy3d.maths.Utils
