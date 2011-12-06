@@ -3,7 +3,7 @@
  *   usage: groovy InteractiveScatterDemo.groovy [numPoints[=25000] widPoints[=1]]
  * @author John/af4ex
  */
-package org.jzy3d.demos.interactive 
+package org.jzy3d.demos.groovy.interactive
 
 import java.awt.Graphics
 import java.awt.Rectangle
