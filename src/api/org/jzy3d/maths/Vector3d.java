@@ -75,7 +75,15 @@ public class Vector3d {
 	public float norm(){
 		return (float)Math.sqrt( Math.pow(x2-x1,2) + Math.pow(y2-y1,2) + Math.pow(z2-z1,2) );
 	}
-		
+
+    /**
+     * Reverse the direction of this vector
+     * @return a new vector with opposite direction
+     */
+    public Vector3d neg() {
+        return new Vector3d(this.x2,this.y2,this.z2,this.x1,this.y1,this.z1);
+    }
+
 	/***********************************************************/
 	
 	/** Compute the distance between two coordinates.*/
