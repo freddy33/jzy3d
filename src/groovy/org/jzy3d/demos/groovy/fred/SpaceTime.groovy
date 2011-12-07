@@ -3,7 +3,6 @@ package org.jzy3d.demos.groovy.fred
 import org.jzy3d.maths.Coord3d
 import org.jzy3d.maths.Vector3d
 import static java.lang.Math.round
-import org.codehaus.groovy.util.Finalizable
 
 /**
  * Date: 12/6/11
@@ -11,11 +10,13 @@ import org.codehaus.groovy.util.Finalizable
  * @author Fred Simon
  */
 class SpaceTime {
+    int initialRatio
     int currentTime = 0
     List<Space> spaces = []
     List<Event> allEvents = []
 
-    SpaceTime() {
+    SpaceTime(int ratio) {
+        initialRatio = ratio
         init()
     }
 
@@ -29,9 +30,9 @@ class SpaceTime {
         Space first = new Space(currentTime)
         spaces.add(first)
         first.addEvent(0f,  0f,  0f, 1f, 0f, 0f)
-        first.addEvent(0f,-10f,-10f, 1f, 0f, 0f)
-        first.addEvent(0f,-10f, 10f, 1f, 0f, 0f)
-        first.addEvent(0f, 10f,  0f, 1f, 0f, 0f)
+        first.addEvent(0f, (float)-initialRatio,(float)-initialRatio, 1f, 0f, 0f)
+        first.addEvent(0f,(float)-initialRatio, (float)initialRatio, 1f, 0f, 0f)
+        first.addEvent(0f, (float)initialRatio,  0f, 1f, 0f, 0f)
     }
 
     Space addTime() {
@@ -55,7 +56,8 @@ class Event {
     boolean used = false
 
     Event(float x, float y, float z, int time, Coord3d dir) {
-        this.point = new Coord3d((float)round(x),(float)round(y),(float)round(z))
+//        this.point = new Coord3d((float)round(x),(float)round(y),(float)round(z))
+        this.point = new Coord3d(x,y,z)
         this.time = time
         this.direction = dir.getNormalizedTo(1f)
     }
@@ -85,19 +87,25 @@ class Space {
 }
 
 class Calculator {
-    List<Coord3d> fixedPoints = [
-            new Coord3d(-500f, -50f, -50f),
-            new Coord3d(500f, 50f, 50f)
-    ]
+    List<Coord3d> fixedPoints
     int N = 4
     SpaceTime spaceTime
 
-    Calculator() {
-        spaceTime = new SpaceTime()
+    Calculator(int ratio) {
+        spaceTime = new SpaceTime(ratio)
+        initFixPoints()
     }
 
     Calculator(SpaceTime spaceTime) {
         this.spaceTime = spaceTime
+        initFixPoints()
+    }
+
+    def initFixPoints() {
+        fixedPoints = [
+                    new Coord3d(-1000f*(float)spaceTime.initialRatio, -1000f, -1000f),
+                    new Coord3d(1000f*(float)spaceTime.initialRatio, 1000f, 1000f)
+            ]
     }
 
     Coord3d[] currentPoints() {
@@ -107,7 +115,7 @@ class Calculator {
     }
 
     def calc() {
-        println "Calculating next scene for time ${spaceTime.currentTime}"
+        print "."
         Space newSpace = spaceTime.addTime()
         // Go back in time one by one and find all group of N
         for (int dt=1; dt <= spaceTime.currentTime; dt++) {

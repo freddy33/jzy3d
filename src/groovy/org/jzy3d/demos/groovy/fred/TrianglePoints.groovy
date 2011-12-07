@@ -40,7 +40,7 @@ G.var.keyHit = false
 def rectangle = new Rectangle(600, 600)
 def tt = new TicToc()
 Scatter scatter = new Scatter()
-Calculator calculator = new Calculator()
+Calculator calculator = new Calculator(100)
 scatter.setData(calculator.currentPoints())
 def chart = buildChart(scatter)
 ChartLauncher.openChart(chart, rectangle, "Triangles", false)
@@ -53,7 +53,7 @@ Thread.start {
         tt.tic()
         scatter.setData(calculator.currentPoints())
         chart.render()
-        if (next%5 == 0) calculator.calc()
+        calculator.calc()
         tt.toc()
         G.var.fpsText = String.format('%4d: %.4f FPS', calculator.spaceTime.currentTime, 1.0 / tt.elapsedSecond())
     }
