@@ -3,6 +3,7 @@ package org.jzy3d.demos.groovy.fred
 import org.jzy3d.maths.Coord3d
 import org.jzy3d.maths.Vector3d
 import static java.lang.Math.round
+import org.codehaus.groovy.util.Finalizable
 
 /**
  * Date: 12/6/11
@@ -27,10 +28,10 @@ class SpaceTime {
     def init() {
         Space first = new Space(currentTime)
         spaces.add(first)
-        first.addEvent(0f,0f,0f)
-        first.addEvent(0f,-10f,-10f)
-        first.addEvent(0f,-10f,10f)
-        first.addEvent(0f,10f,0f)
+        first.addEvent(0f,  0f,  0f, 1f, 0f, 0f)
+        first.addEvent(0f,-10f,-10f, 1f, 0f, 0f)
+        first.addEvent(0f,-10f, 10f, 1f, 0f, 0f)
+        first.addEvent(0f, 10f,  0f, 1f, 0f, 0f)
     }
 
     Space addTime() {
@@ -49,16 +50,18 @@ class SpaceTime {
 
 class Event {
     final Coord3d point
+    final Coord3d direction
     int time
     boolean used = false
 
-    Event(float x, float y, float z, int time) {
+    Event(float x, float y, float z, int time, Coord3d dir) {
         this.point = new Coord3d((float)round(x),(float)round(y),(float)round(z))
         this.time = time
+        this.direction = dir.getNormalizedTo(1f)
     }
 
-    Event(Coord3d point, int time) {
-        this(point.x,point.y,point.z,time)
+    Event(Coord3d point, int time, Coord3d dir) {
+        this(point.x,point.y,point.z,time,dir)
     }
 }
 
@@ -74,8 +77,8 @@ class Space {
         return events.collect { it.point }
     }
 
-    def addEvent(float x, float y, float z) {
-        def res = new Event(x, y, z, time)
+    def addEvent(float x, float y, float z, float xd, float yd, float zd) {
+        def res = new Event(x, y, z, time, new Coord3d(xd,yd,zd))
         events.add(res)
         return res
     }
@@ -116,7 +119,9 @@ class Calculator {
                 Set<List<Event>> allPairs = subsequences.findAll { it.size() == 2 }
                 // If any 2 points of the blocks could not have dt time to join => toFar
                 boolean toFar = allPairs.any { it[0].point.distance(it[1].point) > dt }
-                if (!toFar) {
+                // If 2 directions have more than 90deg angle (cos<0) no match
+                boolean sameDir = allPairs.every { it[0].direction.dot(it[1].direction) > 0f }
+                if (!toFar && sameDir) {
                     Set<List<Event>> allTriangles = subsequences.findAll { it.size() == 3 }
                     List<Event> newEvents = []
                     allTriangles.each {
@@ -141,13 +146,18 @@ class Calculator {
                                     alpha* P1.z + beta* P2.z + gama* P3.z
                             )
                             float radius = P12.norm()*P23.norm()*P13.norm()/P12cP23squared2
+                            // Final direction is cross on the side of all dir
+                            Coord3d finalDir = cross.getNormalizedTo(1f)
+                            if (finalDir.dot(it[0].direction) < 0) {
+                                finalDir = finalDir.mul(-1f)
+                            }
                             // If radius almost dt, Center is the event
                             if (dt-radius < 0.5f) {
-                                newEvents.add(new Event(center, spaceTime.currentTime))
+                                newEvents.add(new Event(center, spaceTime.currentTime, finalDir))
                             } else {
                                 float abovePlane = Math.sqrt(dt*dt - radius*radius)
-                                Coord3d newEventPoint = center.add(cross.getNormalizedTo(abovePlane))
-                                newEvents.add(new Event(newEventPoint, spaceTime.currentTime))
+                                Coord3d newEventPoint = center.add(finalDir.mul(abovePlane))
+                                newEvents.add(new Event(newEventPoint, spaceTime.currentTime, finalDir))
                             }
                         }
                     }

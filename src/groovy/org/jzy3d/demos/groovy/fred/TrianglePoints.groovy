@@ -11,6 +11,8 @@ import org.jzy3d.plot3d.primitives.Scatter
 import org.jzy3d.ui.ChartLauncher
 import org.jzy3d.colors.Color
 import org.jzy3d.maths.Vector3d
+import java.awt.Graphics2D
+import org.jzy3d.plot3d.rendering.view.Renderer2d
 
 // G.var provides Global container for script vars
 class G {
@@ -22,6 +24,14 @@ def buildChart(Scatter sc) {
     sc.width = 5
     sc.color = Color.GREEN
     chart.getScene().add(sc)
+
+    chart.addRenderer(
+    {g ->
+       Graphics2D g2d = (Graphics2D)g
+       g2d.setColor(java.awt.Color.BLACK)
+       g2d.drawString(G.var.fpsText, 50, 50)
+    } as Renderer2d)
+
     return chart
 }
 
@@ -43,8 +53,8 @@ Thread.start {
         tt.tic()
         scatter.setData(calculator.currentPoints())
         chart.render()
-        if (next%25 == 0) calculator.calc()
+        if (next%5 == 0) calculator.calc()
         tt.toc()
-        G.var.fpsText = String.format('%.4f FPS', 1.0 / tt.elapsedSecond())
+        G.var.fpsText = String.format('%4d: %.4f FPS', calculator.spaceTime.currentTime, 1.0 / tt.elapsedSecond())
     }
 }
