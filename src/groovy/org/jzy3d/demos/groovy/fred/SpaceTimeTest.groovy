@@ -40,6 +40,32 @@ assert MathUtils.eq(smallTr.radius2(), 1f)
 assert MathUtils.eq(smallTr.findCenter(), new Coord3d(0f, 0f, -1f))
 assert MathUtils.eq(smallTr.findEvent(2, evt1.direction), new Coord3d((float)Math.sqrt(3), 0f, -1f))
 
+float ratio = 100f
+def incTr = new Triangle(evt2.point.mul(ratio), evt3.point.mul(ratio), evt4.point.mul(ratio))
+assert !incTr.isFlat()
+assert MathUtils.eq(incTr.findCenter(), new Coord3d(0f, 0f, 0f))
+assert MathUtils.eq(incTr.finalDir(evt1.direction), new Coord3d(1f, 0f, 0f))
+assert MathUtils.eq(incTr.finalDir(evt2.direction), new Coord3d(1f, 0f, 0f))
+assert MathUtils.eq(incTr.finalDir(evt1.direction.mul(-1f)), new Coord3d(-1f, 0f, 0f))
+assert MathUtils.eq(incTr.finalDir(evt2.direction.mul(-1f)), new Coord3d(-1f, 0f, 0f))
+float bigDist = (float) ratio * MathUtils.sin120 * 2f
+int nextInt = (int)bigDist
+float nextX = (float) Math.sqrt((nextInt+1)*(nextInt+1) - (ratio*ratio))
+assert incTr.findEvent(nextInt, evt1.direction) == null
+assert MathUtils.eq(incTr.findEvent(nextInt+1, evt1.direction), new Coord3d(nextX, 0f, 0f))
+
+def incSmTr = new Triangle(evt1.point.mul(ratio), evt3.point.mul(ratio), evt4.point.mul(ratio))
+assert !incSmTr.isFlat()
+assert MathUtils.eq(incSmTr.finalDir(evt1.direction), new Coord3d(1f, 0f, 0f))
+assert MathUtils.eq(incSmTr.finalDir(evt2.direction), new Coord3d(1f, 0f, 0f))
+assert MathUtils.eq(incSmTr.finalDir(evt1.direction.mul(-1f)), new Coord3d(-1f, 0f, 0f))
+assert MathUtils.eq(incSmTr.finalDir(evt2.direction.mul(-1f)), new Coord3d(-1f, 0f, 0f))
+assert incSmTr.findEvent(nextInt, evt1.direction) == null
+assert MathUtils.eq(incSmTr.radius2(), (float)ratio*ratio)
+assert MathUtils.eq(incSmTr.findCenter(), new Coord3d(0f, 0f, -ratio))
+assert MathUtils.eq(incSmTr.findEvent(nextInt+1, evt1.direction), new Coord3d(nextX, 0f, -ratio))
+
+
 /*
 int ratio = 1
 def st = new SpaceTime(ratio)

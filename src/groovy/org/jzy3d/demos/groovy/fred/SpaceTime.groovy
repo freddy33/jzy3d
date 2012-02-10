@@ -29,9 +29,9 @@ class SpaceTime {
         Space first = new Space(currentTime)
         spaces.put(0, first)
         first.addEvent(0f, 0f, 0f, 1f, 0f, 0f)
-        first.addEvent(0f, (float) -initialRatio, (float) -initialRatio, 1f, 0f, 0f)
-        first.addEvent(0f, (float) -initialRatio, (float) initialRatio, 1f, 0f, 0f)
-        first.addEvent(0f, (float) initialRatio, 0f, 1f, 0f, 0f)
+        first.addEvent(0f, (float) initialRatio*MathUtils.sin120, (float) initialRatio*MathUtils.cos120, 1f, 0f, 0f)
+        first.addEvent(0f, (float) -initialRatio*MathUtils.sin120, (float) initialRatio*MathUtils.cos120, 1f, 0f, 0f)
+        first.addEvent(0f, 0f, (float) initialRatio, 1f, 0f, 0f)
     }
 
     Space addTime() {
@@ -198,8 +198,9 @@ class Triangle {
 }
 
 class Calculator {
+    static int N = 4
+
     List<Coord3d> fixedPoints
-    int N = 4
     SpaceTime spaceTime
 
     Calculator(int ratio) {
@@ -226,6 +227,7 @@ class Calculator {
     }
 
     def calc() {
+        if (spaceTime.currentTime % spaceTime.initialRatio == 0) println "Current time: ${spaceTime.currentTime}"
         print "."
         Space newSpace = spaceTime.addTime()
         // Go back in time one by one and find all group of N
@@ -246,33 +248,8 @@ class Calculator {
                     allTriangles.each {
                         // For each triangle find the equidistant ( = dt ) points
                         def tr = new Triangle(it)
-                        float P12cP23squared2 = 2 * tr.p12p23cross.magSquared()
-                        if (P12cP23squared2 > 1e-6f) {
-                            // OK, it's a non flat triangle => find center from
-                            // "Barycentric coordinates from cross- and dot-products"
-                            float alpha = P23.vector().magSquared() * P12.dot(P13) / P12cP23squared2
-                            float beta = P13.vector().magSquared() * P12.neg().dot(P23) / P12cP23squared2
-                            float gama = P12.vector().magSquared() * P13.neg().dot(P23.neg()) / P12cP23squared2
-                            Coord3d center = new Coord3d(
-                                    alpha * P1.x + beta * P2.x + gama * P3.x,
-                                    alpha * P1.y + beta * P2.y + gama * P3.y,
-                                    alpha * P1.z + beta * P2.z + gama * P3.z
-                            )
-                            float radius = P12.norm() * P23.norm() * P13.norm() / P12cP23squared2
-                            // Final direction is cross on the side of all dir
-                            Coord3d finalDir = cross.getNormalizedTo(1f)
-                            if (finalDir.dot(it[0].direction) < 0) {
-                                finalDir = finalDir.mul(-1f)
-                            }
-                            // If radius almost dt, Center is the event
-                            if (dt - radius < 0.5f) {
-                                newEvents.add(new Event(center, spaceTime.currentTime, finalDir))
-                            } else {
-                                float abovePlane = Math.sqrt(dt * dt - radius * radius)
-                                Coord3d newEventPoint = center.add(finalDir.mul(abovePlane))
-                                newEvents.add(new Event(newEventPoint, spaceTime.currentTime, finalDir))
-                            }
-                        }
+                        Coord3d newPoint = tr.findEvent(dt, it[0].direction)
+                        if (newPoint != null) newEvents.add(new Event(newPoint, spaceTime.currentTime, tr.finalDir(it[0].direction)))
                     }
                     if (newEvents.size() == block.size()) {
                         // Conservation of events good
@@ -283,11 +260,11 @@ class Calculator {
             }
         }
         // Clean all used events
-        spaceTime.spaces.each { Space space ->
+        spaceTime.spaces.each { dt, Space space ->
             space.events.removeAll { it.used }
         }
         // Clean all used spaces
-        spaceTime.spaces.removeAll { it.events.isEmpty() }
+        spaceTime.spaces = spaceTime.spaces.findAll { !it.value.events.isEmpty() }
     }
 
     static def forAllN(List<Event> evtList, int idx, List<Event> block, Closure doStuff) {

@@ -10,6 +10,9 @@ import org.jzy3d.maths.Coord3d
  * To change this template use File | Settings | File Templates.
  */
 class MathUtils {
+    static float sin120 = (float) Math.sin(2*Math.PI/3)
+    static float cos120 = -0.5f
+
     static boolean eq(float a, float b) {
         Math.abs(a-b) < 1e-6f
     }
