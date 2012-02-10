@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="gluegen-rt">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../jogl/current/jar/gluegen-rt.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../jogl/current/jar/jogl.all.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../jogl/current/jar/newt.event.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../jogl/current/gluegen-java-src.zip!/" />
+      <root url="jar://$PROJECT_DIR$/../jogl/current/jogl-java-src.zip!/" />
+    </SOURCES>
+  </library>
+</component>

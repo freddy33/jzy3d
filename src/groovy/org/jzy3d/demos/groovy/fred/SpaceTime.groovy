@@ -2,7 +2,6 @@ package org.jzy3d.demos.groovy.fred
 
 import org.jzy3d.maths.Coord3d
 import org.jzy3d.maths.Vector3d
-import static java.lang.Math.round
 
 /**
  * Date: 12/6/11
@@ -12,7 +11,7 @@ import static java.lang.Math.round
 class SpaceTime {
     int initialRatio
     int currentTime = 0
-    List<Space> spaces = []
+    Map<Integer, Space> spaces = [:]
     List<Event> allEvents = []
 
     SpaceTime(int ratio) {
@@ -22,30 +21,30 @@ class SpaceTime {
 
     SpaceTime(Closure firstSpace) {
         Space first = new Space(currentTime)
-        spaces.add(first)
+        spaces.put(0, first)
         firstSpace.call(first)
     }
 
     def init() {
         Space first = new Space(currentTime)
-        spaces.add(first)
-        first.addEvent(0f,  0f,  0f, 1f, 0f, 0f)
-        first.addEvent(0f, (float)-initialRatio,(float)-initialRatio, 1f, 0f, 0f)
-        first.addEvent(0f,(float)-initialRatio, (float)initialRatio, 1f, 0f, 0f)
-        first.addEvent(0f, (float)initialRatio,  0f, 1f, 0f, 0f)
+        spaces.put(0, first)
+        first.addEvent(0f, 0f, 0f, 1f, 0f, 0f)
+        first.addEvent(0f, (float) -initialRatio, (float) -initialRatio, 1f, 0f, 0f)
+        first.addEvent(0f, (float) -initialRatio, (float) initialRatio, 1f, 0f, 0f)
+        first.addEvent(0f, (float) initialRatio, 0f, 1f, 0f, 0f)
     }
 
     Space addTime() {
-        Space previous = spaces.last()
+        Space previous = spaces[currentTime]
         currentTime++
         Space newSpace = new Space(currentTime)
-        spaces << newSpace
-        allEvents.addAll(previous.events)
+        spaces.put(currentTime, newSpace)
+        if (previous != null && !previous.events.isEmpty()) allEvents.addAll(previous.events)
         return newSpace
     }
 
-    Coord3d[] currentPoints() {
-        spaces.last().currentPoints()
+    List<Coord3d> currentPoints() {
+        return allEvents.collect { it.point }
     }
 }
 
@@ -57,13 +56,13 @@ class Event {
 
     Event(float x, float y, float z, int time, Coord3d dir) {
 //        this.point = new Coord3d((float)round(x),(float)round(y),(float)round(z))
-        this.point = new Coord3d(x,y,z)
+        this.point = new Coord3d(x, y, z)
         this.time = time
         this.direction = dir.getNormalizedTo(1f)
     }
 
     Event(Coord3d point, int time, Coord3d dir) {
-        this(point.x,point.y,point.z,time,dir)
+        this(point.x, point.y, point.z, time, dir)
     }
 }
 
@@ -75,15 +74,127 @@ class Space {
         this.time = time
     }
 
-    List<Coord3d> currentPoints() {
-        return events.collect { it.point }
-    }
-
     def addEvent(float x, float y, float z, float xd, float yd, float zd) {
-        def res = new Event(x, y, z, time, new Coord3d(xd,yd,zd))
+        def res = new Event(x, y, z, time, new Coord3d(xd, yd, zd))
         events.add(res)
         return res
     }
+}
+
+class Triangle {
+    List<Coord3d> p
+    Coord3d p12
+    Coord3d p13
+    Coord3d p23
+    Coord3d p12p23cross
+    Float p12p13cross22
+
+    Triangle(List<Event> p) {
+        this(p[0].point, p[1].point, p[2].point)
+    }
+
+    Triangle(Coord3d p1, Coord3d p2, Coord3d p3) {
+        this.p = []
+        this.p << p1
+        this.p << p2
+        this.p << p3
+    }
+
+    Coord3d v12() {
+        p12 != null ? p12 : (p12 = new Vector3d(p[0], p[1]).vector())
+    }
+
+    Coord3d v13() {
+        p13 != null ? p13 : (p13 = new Vector3d(p[0], p[2]).vector())
+    }
+
+    Coord3d v23() {
+        p23 != null ? p23 : (p23 = new Vector3d(p[1], p[2]).vector())
+    }
+
+    Coord3d v12v23cross() {
+        p12p23cross != null ? p12p23cross : (p12p23cross = MathUtils.cross(v12(), v23()))
+    }
+
+    float v12v23s2() {
+        p12p13cross22 != null ? p12p13cross22 : (p12p13cross22 = v12v23cross().magSquared() * 2f)
+    }
+
+    Coord3d finalDir(Coord3d origDirection) {
+        if (isFlat()) {
+            // Flat triangle
+            throw new IllegalArgumentException("""Triangle $this is flat since $v12v23s2 is too small!
+                                                  Cannot find final direction of a flat triangle!""")
+        }
+        // Final direction (perpendicular to triangle plane) is cross vector
+        Coord3d finalDir = v12v23cross().getNormalizedTo(1f)
+        if (finalDir.dot(origDirection) < 0) {
+            return finalDir.mul(-1f)
+        }
+        return finalDir
+    }
+
+    Coord3d findEvent(int dt, Coord3d origDirection) {
+        if (isFlat()) {
+            return null
+        }
+        float dt2 = dt * dt
+        if (
+                (v12().magSquared() > dt2) ||
+                        (v13().magSquared() > dt2) ||
+                        (v23().magSquared() > dt2)
+        ) {
+            // too big triangle for dt
+            return null
+        }
+        // OK, it's a non flat triangle and dt is big enough => find center
+        Coord3d center = findCenter()
+        // Then find how much above plane on center need to add
+        float radius2 = radius2()
+        if (dt2 - radius2 < 1f) {
+            throw new IllegalStateException("Don't know how to do math!")
+        } else {
+            float abovePlane = Math.sqrt(dt2 - radius2)
+            return center.add(finalDir(origDirection).mul(abovePlane))
+        }
+    }
+
+    float radius2() {
+        return (float)(v12().magSquared() * v13().magSquared() * v23().magSquared() / (2f * v12v23s2()))
+    }
+
+    boolean isFlat() {
+        return MathUtils.eq(v12v23s2(), 0f)
+    }
+
+    Coord3d findCenter() {
+        if (isFlat()) {
+            // Flat triangle
+            throw new IllegalArgumentException("""Triangle $this is flat since $v12v23s2 is too small!
+                                                   Cannot find center of a flat triangle!""")
+        }
+        // From "Barycentric coordinates from cross- and dot-products"
+        float alpha = v23().magSquared() * v12().dot(v13()) / v12v23s2()
+        float beta = v13().magSquared() * v12().mul(-1f).dot(v23()) / v12v23s2()
+        float gama = v12().magSquared() * v13().mul(-1f).dot(v23().mul(-1f)) / v12v23s2()
+        Coord3d center = new Coord3d(
+                alpha * p[0].x + beta * p[1].x + gama * p[2].x,
+                alpha * p[0].y + beta * p[1].y + gama * p[2].y,
+                alpha * p[0].z + beta * p[1].z + gama * p[2].z
+        )
+        return center
+    }
+
+    @Override
+    public String toString() {
+        return "Triangle{" +
+                "p=" + p +
+                ", p12=" + p12 +
+                ", p13=" + p13 +
+                ", p23=" + p23 +
+                '}';
+    }
+
 }
 
 class Calculator {
@@ -103,9 +214,9 @@ class Calculator {
 
     def initFixPoints() {
         fixedPoints = [
-                    new Coord3d(-1000f*(float)spaceTime.initialRatio, -1000f, -1000f),
-                    new Coord3d(1000f*(float)spaceTime.initialRatio, 1000f, 1000f)
-            ]
+                new Coord3d(-1000f * (float) spaceTime.initialRatio, -1000f, -1000f),
+                new Coord3d(1000f * (float) spaceTime.initialRatio, 1000f, 1000f)
+        ]
     }
 
     Coord3d[] currentPoints() {
@@ -118,10 +229,10 @@ class Calculator {
         print "."
         Space newSpace = spaceTime.addTime()
         // Go back in time one by one and find all group of N
-        for (int dt=1; dt <= spaceTime.currentTime; dt++) {
+        for (int dt = 1; dt <= spaceTime.currentTime; dt++) {
             List<Event> events = spaceTime.spaces[spaceTime.currentTime - dt]?.events
             if (events == null || events.size() < N) continue
-            forAllN(events,0,[]) { List<Event> block ->
+            forAllN(events, 0, []) { List<Event> block ->
                 // For all N blocks try to find new events
                 Set<List<Event>> subsequences = block.subsequences()
                 Set<List<Event>> allPairs = subsequences.findAll { it.size() == 2 }
@@ -134,36 +245,30 @@ class Calculator {
                     List<Event> newEvents = []
                     allTriangles.each {
                         // For each triangle find the equidistant ( = dt ) points
-                        Coord3d P1 = it[0].point
-                        Coord3d P2 = it[1].point
-                        Coord3d P3 = it[2].point
-                        Vector3d P12 = new Vector3d(P1, P2)
-                        Vector3d P13 = new Vector3d(P1, P3)
-                        Coord3d cross = P12.cross(P13)
-                        float P12cP23squared2 = 2* cross.magSquared()
-                        if (P12cP23squared2 > 1e-10f) {
+                        def tr = new Triangle(it)
+                        float P12cP23squared2 = 2 * tr.p12p23cross.magSquared()
+                        if (P12cP23squared2 > 1e-6f) {
                             // OK, it's a non flat triangle => find center from
                             // "Barycentric coordinates from cross- and dot-products"
-                            Vector3d P23 = new Vector3d(P2, P3)
-                            float alpha = P23.vector().magSquared()*P12.dot(P13)/P12cP23squared2
-                            float beta = P13.vector().magSquared()*P12.neg().dot(P23)/P12cP23squared2
-                            float gama = P12.vector().magSquared()*P13.neg().dot(P23.neg())/P12cP23squared2
+                            float alpha = P23.vector().magSquared() * P12.dot(P13) / P12cP23squared2
+                            float beta = P13.vector().magSquared() * P12.neg().dot(P23) / P12cP23squared2
+                            float gama = P12.vector().magSquared() * P13.neg().dot(P23.neg()) / P12cP23squared2
                             Coord3d center = new Coord3d(
-                                    alpha* P1.x + beta* P2.x + gama* P3.x,
-                                    alpha* P1.y + beta* P2.y + gama* P3.y,
-                                    alpha* P1.z + beta* P2.z + gama* P3.z
+                                    alpha * P1.x + beta * P2.x + gama * P3.x,
+                                    alpha * P1.y + beta * P2.y + gama * P3.y,
+                                    alpha * P1.z + beta * P2.z + gama * P3.z
                             )
-                            float radius = P12.norm()*P23.norm()*P13.norm()/P12cP23squared2
+                            float radius = P12.norm() * P23.norm() * P13.norm() / P12cP23squared2
                             // Final direction is cross on the side of all dir
                             Coord3d finalDir = cross.getNormalizedTo(1f)
                             if (finalDir.dot(it[0].direction) < 0) {
                                 finalDir = finalDir.mul(-1f)
                             }
                             // If radius almost dt, Center is the event
-                            if (dt-radius < 0.5f) {
+                            if (dt - radius < 0.5f) {
                                 newEvents.add(new Event(center, spaceTime.currentTime, finalDir))
                             } else {
-                                float abovePlane = Math.sqrt(dt*dt - radius*radius)
+                                float abovePlane = Math.sqrt(dt * dt - radius * radius)
                                 Coord3d newEventPoint = center.add(finalDir.mul(abovePlane))
                                 newEvents.add(new Event(newEventPoint, spaceTime.currentTime, finalDir))
                             }
@@ -185,7 +290,7 @@ class Calculator {
         spaceTime.spaces.removeAll { it.events.isEmpty() }
     }
 
-    def forAllN(List<Event> evtList, int idx, List<Event> block, Closure doStuff) {
+    static def forAllN(List<Event> evtList, int idx, List<Event> block, Closure doStuff) {
         evtList.each { Event evt ->
             if (!evt.used && !block.contains(evt)) {
                 block[idx] = evt
