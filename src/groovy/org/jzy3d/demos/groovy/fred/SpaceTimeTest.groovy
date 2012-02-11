@@ -65,12 +65,54 @@ assert MathUtils.eq(incSmTr.radius2(), (float)ratio*ratio)
 assert MathUtils.eq(incSmTr.findCenter(), new Coord3d(0f, 0f, -ratio))
 assert MathUtils.eq(incSmTr.findEvent(nextInt+1, evt1.direction), new Coord3d(nextX, 0f, -ratio))
 
-
-/*
-int ratio = 1
-def st = new SpaceTime(ratio)
-assert st.spaces.last().events.size() == 4
+def st = new SpaceTime((int)ratio)
+assert st.spaces[0].events.size() == 4
 Calculator calculator = new Calculator(st)
 calculator.calc()
-assert st.spaces.last().events.size() == 4
-*/
+assert st.currentTime == 1
+assert st.allEvents.size() == 4
+assert st.spaces[0].events.size() == 4
+for (int i=2;i<=nextInt;i++) {
+    calculator.calc()
+    assert st.currentTime == i
+    assert st.allEvents.size() == 4
+    assert st.spaces[0].events.size() == 4
+    assert st.spaces[i-1] == null
+    assert st.currentPoints().size() == 4
+}
+calculator.calc()
+assert st.currentTime == nextInt+1
+assert st.spaces[st.currentTime].events.size() == 4
+assert st.allEvents.size() == 4
+assert st.spaces[0] == null
+calculator.calc()
+assert st.currentTime == nextInt+2
+assert st.spaces[nextInt+1].events.size() == 4
+assert st.spaces[0] == null
+assert st.allEvents.size() == 8
+def points = st.currentPoints()
+assert points.size() == 4
+assert points.any { MathUtils.eq(it, new Coord3d(nextX, 0f, -ratio)) }
+
+for (int i=3;i<=nextInt+1;i++) {
+    calculator.calc()
+    assert st.currentTime == i+nextInt
+    assert st.allEvents.size() == 8
+    assert st.spaces[0] == null
+    assert st.spaces[nextInt+1].events.size() == 4
+    assert st.currentPoints().size() == 4
+}
+calculator.calc()
+assert st.currentTime == nextInt+nextInt+2
+assert st.spaces[st.currentTime].events.size() == 4
+assert st.allEvents.size() == 8
+assert st.spaces[nextInt+1] == null
+calculator.calc()
+assert st.currentTime == nextInt+nextInt+3
+assert st.spaces[nextInt+nextInt+2].events.size() == 4
+assert st.spaces[nextInt+1] == null
+assert st.allEvents.size() == 12
+points = st.currentPoints()
+assert points.size() == 4
+assert points.any { MathUtils.eq(it, new Coord3d(nextX+nextX, 0f, ratio)) }
+

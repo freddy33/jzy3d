@@ -28,10 +28,27 @@ class SpaceTime {
     def init() {
         Space first = new Space(currentTime)
         spaces.put(0, first)
-        first.addEvent(0f, 0f, 0f, 1f, 0f, 0f)
-        first.addEvent(0f, (float) initialRatio*MathUtils.sin120, (float) initialRatio*MathUtils.cos120, 1f, 0f, 0f)
-        first.addEvent(0f, (float) -initialRatio*MathUtils.sin120, (float) initialRatio*MathUtils.cos120, 1f, 0f, 0f)
-        first.addEvent(0f, 0f, (float) initialRatio, 1f, 0f, 0f)
+        addPhoton(first,
+                new Coord3d(0f, 0f, 0f),
+                new Coord3d(1f, 0f, 0f),
+                new Coord3d(0f, 0f, 1f),
+                (float) initialRatio)
+    }
+
+    def static addPhoton(Space space, Coord3d c, Coord3d v, Coord3d p, float size) {
+        p.normalizeTo(1f)
+        v.normalizeTo(1f)
+        // v and p needs to be perpendicular so cross should be normalized sin(teta)= 1
+        Coord3d py = MathUtils.cross(v, p)
+        if (!MathUtils.eq(py.magSquared(), 1f)) {
+            throw new IllegalArgumentException("Polarization $v and vector $v are not perpendicular!");
+        }
+        space.addEvent(c, v)
+        space.addEvent(c.add(p.mul(size)), v)
+        Coord3d cos120 = p.mul((float) size * MathUtils.cos120)
+        Coord3d sin120 = py.mul((float) size * MathUtils.sin120)
+        space.addEvent(c.add(cos120).add(sin120), v)
+        space.addEvent(c.add(cos120).sub(sin120), v)
     }
 
     Space addTime() {
@@ -44,7 +61,7 @@ class SpaceTime {
     }
 
     List<Coord3d> currentPoints() {
-        return allEvents.collect { it.point }
+        return allEvents.findAll { !it.used }.collect { it.point }
     }
 }
 
@@ -76,6 +93,12 @@ class Space {
 
     def addEvent(float x, float y, float z, float xd, float yd, float zd) {
         def res = new Event(x, y, z, time, new Coord3d(xd, yd, zd))
+        events.add(res)
+        return res
+    }
+
+    def addEvent(Coord3d point, Coord3d direction) {
+        def res = new Event(point, time, direction)
         events.add(res)
         return res
     }
@@ -215,8 +238,8 @@ class Calculator {
 
     def initFixPoints() {
         fixedPoints = [
-                new Coord3d(-1000f * (float) spaceTime.initialRatio, -1000f, -1000f),
-                new Coord3d(1000f * (float) spaceTime.initialRatio, 1000f, 1000f)
+                new Coord3d(-50f, -50f, -50f).mul((float)spaceTime.initialRatio),
+                new Coord3d(50f, 50f, 50f).mul((float)spaceTime.initialRatio)
         ]
     }
 
@@ -224,6 +247,10 @@ class Calculator {
         List<Coord3d> points = spaceTime.currentPoints()
         points.addAll(fixedPoints)
         points.toArray(new Coord3d[points.size()])
+    }
+
+    def manyCalc(int n) {
+        for (int i=0;i<n;i++) calc()
     }
 
     def calc() {
