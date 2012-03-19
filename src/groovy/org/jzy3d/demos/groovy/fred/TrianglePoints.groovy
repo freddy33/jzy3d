@@ -40,42 +40,47 @@ G.var.keyHit = false
 def rectangle = new Rectangle(600, 600)
 def tt = new TicToc()
 Scatter scatter = new Scatter()
-Calculator calculator = new Calculator(100)
+float ratio = 100f
+Calculator calculator = new Calculator((int)ratio)
+float bigDist = (float) ratio * MathUtils.sin120 * 2f
+int nextInt = 1+(int)bigDist
+float nextX = (float) Math.sqrt((nextInt*nextInt) - (ratio*ratio))
+
 SpaceTime.addPhoton(calculator.spaceTime.spaces[0],
-        new Coord3d(1000f, 0f, 0f),
+        new Coord3d(3f*nextX, 0f, 0f),
         new Coord3d(-1f, 0f, 0f),
         new Coord3d(0f, 0f, 1f),
-        100f
+        ratio
 )
 SpaceTime.addPhoton(calculator.spaceTime.spaces[0],
-        new Coord3d(-1000f, 0f, 0f),
+        new Coord3d(-3f*nextX, 0f, 0f),
         new Coord3d(1f, 0f, 0f),
         new Coord3d(0f, 0f, 1f),
-        100f
+        ratio
 )
 SpaceTime.addPhoton(calculator.spaceTime.spaces[0],
-        new Coord3d(0f, -1000f, 0f),
+        new Coord3d(0f, -3f*nextX, 0f),
         new Coord3d(0f, 1f, 0f),
         new Coord3d(1f, 0f, 0f),
-        100f
+        ratio
 )
 SpaceTime.addPhoton(calculator.spaceTime.spaces[0],
-        new Coord3d(0f, 1000f, 0f),
+        new Coord3d(0f, 3f*nextX, 0f),
         new Coord3d(0f, -1f, 0f),
         new Coord3d(1f, 0f, 0f),
-        100f
+        ratio
 )
 SpaceTime.addPhoton(calculator.spaceTime.spaces[0],
-        new Coord3d(0f, 0f, -1000f),
+        new Coord3d(0f, 0f, -3f*nextX),
         new Coord3d(0f, 0f, 1f),
         new Coord3d(0f, 1f, 0f),
-        100f
+        ratio
 )
 SpaceTime.addPhoton(calculator.spaceTime.spaces[0],
-        new Coord3d(0f, 0f, 1000f),
+        new Coord3d(0f, 0f, 3f*nextX),
         new Coord3d(0f, 0f, -1f),
         new Coord3d(0f, 1f, 0f),
-        100f
+        ratio
 )
 scatter.setData(calculator.currentPoints())
 def chart = buildChart(scatter)

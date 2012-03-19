@@ -267,16 +267,18 @@ class Calculator {
                 Set<List<Event>> allPairs = subsequences.findAll { it.size() == 2 }
                 // If any 2 points of the blocks could not have dt time to join => toFar
                 boolean toFar = allPairs.any { it[0].point.distance(it[1].point) > dt }
-                // If 2 directions have more than 90deg angle (cos<0) no match
-                boolean sameDir = allPairs.every { it[0].direction.dot(it[1].direction) > 0f }
-                if (!toFar && sameDir) {
+                // Global dir of the block is the sum of directions vectors
+                Coord3d blockDirection = new Coord3d(0f, 0f, 0f)
+                block.each { blockDirection.addSelf(it.direction) }
+                if (!toFar && !MathUtils.eq(blockDirection.magSquared(), 0f)) {
+                    blockDirection = blockDirection.normalizeTo(1f);
                     Set<List<Event>> allTriangles = subsequences.findAll { it.size() == 3 }
                     List<Event> newEvents = []
                     allTriangles.each {
                         // For each triangle find the equidistant ( = dt ) points
                         def tr = new Triangle(it)
-                        Coord3d newPoint = tr.findEvent(dt, it[0].direction)
-                        if (newPoint != null) newEvents.add(new Event(newPoint, spaceTime.currentTime, tr.finalDir(it[0].direction)))
+                        Coord3d newPoint = tr.findEvent(dt, blockDirection)
+                        if (newPoint != null) newEvents.add(new Event(newPoint, spaceTime.currentTime, tr.finalDir(blockDirection)))
                     }
                     if (newEvents.size() == block.size()) {
                         // Conservation of events good
